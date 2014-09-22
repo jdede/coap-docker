@@ -4,9 +4,13 @@ FROM ubuntu:14.04
 
 MAINTAINER Markus Becker <markushx@gmail.com>
 
+ENV LC_ALL C
+ENV DEBIAN_FRONTEND noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN true
+
 ENV HOME /root
 
-RUN apt-get update && apt-get install -y git autoconf gcc make libtool gettext libcunit1 libcunit1-dev clang default-jdk ant maven nodejs npm python firefox ruby cmake
+RUN apt-get update && apt-get install -y --no-install-recommends git autoconf automake gcc make libtool gettext libcunit1 libcunit1-dev clang default-jdk ant maven nodejs npm python firefox ruby cmake
 
 RUN mkdir /root/src
 WORKDIR /root/src
@@ -90,7 +94,7 @@ RUN npm install coap-cli -g
 
 # txThings
 # TODO: Check installation of python-setuptools
-RUN apt-get update && apt-get install -y python-twisted-core python-twisted-web python-openssl python-setuptools python-dev
+RUN apt-get update && apt-get install -y --no-install-recommends python-twisted-core python-twisted-web python-openssl python-setuptools python-dev
 WORKDIR /root/src
 RUN git clone https://github.com/siskin/txThings.git
 WORKDIR /root/src/txThings
@@ -152,11 +156,7 @@ RUN rm copper_cu-0.18.4-fx.xpi
 WORKDIR /root/src
 RUN rmdir copper
 
-# TODO: insta, setup and start xserver before using vnx
-#RUN apt-get install -y x11vnc xvfb
-#RUN mkdir ~/.vnc
-# Setup a password
-#RUN x11vnc -storepasswd 1234 ~/.vnc/passwd
+RUN apt-get install -y --no-install-recommends x11vnc xvfb lxde gtk2-engines-murrine ttf-ubuntu-font-family
 
 ################
 
@@ -165,8 +165,18 @@ RUN rmdir copper
 
 ################
 
+# Bug in docker:
+RUN echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf
+RUN echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
+RUN echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.conf
+
 WORKDIR /root/src
+
+# CoAP
 EXPOSE 5683
 
-# Needed for vnc (if configured)
-#EXPOSE 61616
+# VNC
+EXPOSE 5999
+
+ADD startup.sh /root/
+ENTRYPOINT ["/root/startup.sh"]
